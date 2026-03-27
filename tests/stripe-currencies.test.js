@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  format, formatPlain, formatWithCode,
+  format, formatPlain, formatWithCode, formatRecurring,
   getSymbol, getName, getDecimals,
   toSmallestUnit, fromSmallestUnit,
   isSupported, isZeroDecimal,
@@ -76,6 +76,74 @@ describe('formatWithCode', () => {
     assert.equal(formatWithCode(1999, 'usd'), '19.99 USD');
     assert.equal(formatWithCode(1000, 'jpy'), '1,000 JPY');
     assert.equal(formatWithCode(5000, 'bhd'), '5.000 BHD');
+  });
+});
+
+// ── formatRecurring ─────────────────────────
+
+describe('formatRecurring', () => {
+  it('monthly', () => {
+    assert.equal(formatRecurring(999, 'usd', 'month'), 'US$9.99/mo');
+  });
+
+  it('yearly', () => {
+    assert.equal(formatRecurring(2999, 'usd', 'year'), 'US$29.99/yr');
+  });
+
+  it('weekly', () => {
+    assert.equal(formatRecurring(500, 'gbp', 'week'), '£5.00/wk');
+  });
+
+  it('daily', () => {
+    assert.equal(formatRecurring(100, 'usd', 'day'), 'US$1.00/day');
+  });
+
+  it('every 3 months', () => {
+    assert.equal(formatRecurring(999, 'usd', 'month', 3), 'US$9.99 every 3 months');
+  });
+
+  it('every 2 years', () => {
+    assert.equal(formatRecurring(999, 'usd', 'year', 2), 'US$9.99 every 2 years');
+  });
+
+  it('every 2 weeks', () => {
+    assert.equal(formatRecurring(500, 'usd', 'week', 2), 'US$5.00 every 2 weeks');
+  });
+
+  it('every 7 days', () => {
+    assert.equal(formatRecurring(100, 'usd', 'day', 7), 'US$1.00 every 7 days');
+  });
+
+  it('interval count of 1 uses short suffix', () => {
+    assert.equal(formatRecurring(999, 'usd', 'month', 1), 'US$9.99/mo');
+  });
+
+  it('zero-decimal currency', () => {
+    assert.equal(formatRecurring(1000, 'jpy', 'month'), '¥1,000/mo');
+    assert.equal(formatRecurring(12000, 'jpy', 'year'), '¥12,000/yr');
+  });
+
+  it('three-decimal currency', () => {
+    assert.equal(formatRecurring(5000, 'bhd', 'month'), 'BD5.000/mo');
+  });
+
+  it('different currencies', () => {
+    assert.equal(formatRecurring(999, 'eur', 'month'), '€9.99/mo');
+    assert.equal(formatRecurring(999, 'cad', 'month'), 'C$9.99/mo');
+    assert.equal(formatRecurring(4999, 'aud', 'year'), 'A$49.99/yr');
+  });
+
+  it('no interval returns plain format', () => {
+    assert.equal(formatRecurring(999, 'usd', null), 'US$9.99');
+    assert.equal(formatRecurring(999, 'usd', ''), 'US$9.99');
+  });
+
+  it('negative amounts', () => {
+    assert.equal(formatRecurring(-999, 'usd', 'month'), '-US$9.99/mo');
+  });
+
+  it('zero amount', () => {
+    assert.equal(formatRecurring(0, 'usd', 'month'), 'US$0.00/mo');
   });
 });
 

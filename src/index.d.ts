@@ -11,6 +11,14 @@ export function formatPlain(amount: number, currency: string): string;
 /** Format an amount with currency code suffix (e.g. '19.99 USD'). */
 export function formatWithCode(amount: number, currency: string): string;
 
+/** Format a recurring/subscription price with interval suffix. */
+export function formatRecurring(
+  amount: number,
+  currency: string,
+  interval: 'day' | 'week' | 'month' | 'year',
+  intervalCount?: number
+): string;
+
 /** Get the currency symbol (e.g. '$', '£', '¥'). */
 export function getSymbol(currency: string): string;
 

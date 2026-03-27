@@ -7,6 +7,8 @@
  * Functional API — no classes. Zero dependencies.
  * Works in Node.js, Cloudflare Workers, Deno, Bun, and browsers.
  *
+ * v2.1.0: Added formatRecurring() for subscription price display.
+ *
  * @module @arraypress/stripe-currencies
  */
 
@@ -96,6 +98,48 @@ export function formatPlain(amount, currency) {
  */
 export function formatWithCode(amount, currency) {
   return formatPlain(amount, currency) + ' ' + (currency || '').toUpperCase();
+}
+
+/**
+ * Format a recurring/subscription price with interval suffix.
+ *
+ * Combines amount formatting with a human-readable billing interval.
+ * Handles all Stripe recurring intervals (day, week, month, year) and
+ * custom interval counts (e.g. "every 3 months").
+ *
+ * @param {number} amount - Amount in smallest unit.
+ * @param {string} currency - Currency code.
+ * @param {string} interval - Billing interval: 'day', 'week', 'month', 'year'.
+ * @param {number} [intervalCount=1] - Number of intervals per billing cycle.
+ * @returns {string} Formatted recurring price.
+ *
+ * @example
+ * formatRecurring(999, 'usd', 'month')        // 'US$9.99/mo'
+ * formatRecurring(2999, 'usd', 'year')         // 'US$29.99/yr'
+ * formatRecurring(999, 'usd', 'month', 3)      // 'US$9.99 every 3 months'
+ * formatRecurring(500, 'gbp', 'week')           // '£5.00/wk'
+ * formatRecurring(100, 'usd', 'day')            // 'US$1.00/day'
+ * formatRecurring(999, 'eur', 'month')          // '€9.99/mo'
+ * formatRecurring(1000, 'jpy', 'month')         // '¥1,000/mo'
+ * formatRecurring(999, 'usd', 'year', 2)        // 'US$9.99 every 2 years'
+ */
+export function formatRecurring(amount, currency, interval, intervalCount = 1) {
+  const base = format(amount, currency);
+
+  if (!interval) return base;
+
+  // Custom interval counts: "every 3 months"
+  if (intervalCount > 1) {
+    const plurals = { day: 'days', week: 'weeks', month: 'months', year: 'years' };
+    const plural = plurals[interval] || `${interval}s`;
+    return `${base} every ${intervalCount} ${plural}`;
+  }
+
+  // Standard suffixes: /day, /wk, /mo, /yr
+  const suffixes = { day: '/day', week: '/wk', month: '/mo', year: '/yr' };
+  const suffix = suffixes[interval] || `/${interval}`;
+
+  return base + suffix;
 }
 
 // ── Currency Data ───────────────────────────

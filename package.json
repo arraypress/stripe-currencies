@@ -1,6 +1,6 @@
 {
   "name": "@arraypress/stripe-currencies",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Stripe currency formatting, conversion, and validation. All 136 currencies.",
   "type": "module",
   "main": "src/index.js",
