@@ -31,23 +31,36 @@ function getConfig(currency) {
 // ── Formatting ──────────────────────────────
 
 /**
+ * Short symbols for currencies where the full symbol includes a prefix.
+ * Only currencies that share the '$' sign need disambiguation by default.
+ */
+const SHORT_SYMBOLS = {
+  USD: '$', CAD: '$', AUD: '$', NZD: '$', SGD: '$', HKD: '$',
+  MXN: '$', ARS: '$', CLP: '$', COP: '$', DOP: '$', JMD: '$',
+  TTD: '$', BBD: '$', BSD: '$', BZD: '$', BMD: '$', KYD: '$',
+  XCD: '$', FJD: '$', GYD: '$', LRD: '$', NAD: '$', SBD: '$',
+  SRD: '$', TWD: '$',
+};
+
+/**
  * Format an amount with currency symbol.
  *
  * Amount is in the smallest unit (cents, pence, etc.) as Stripe returns.
  *
  * @param {number} amount - Amount in smallest unit.
  * @param {string} currency - Currency code (e.g. 'usd', 'gbp', 'jpy').
+ * @param {Object} [options] - Formatting options.
+ * @param {boolean} [options.short] - Use short symbol ('$' instead of 'US$').
  * @returns {string} Formatted string.
  *
  * @example
- * format(1999, 'usd')    // 'US$19.99'
- * format(1500, 'gbp')    // '£15.00'
- * format(1000, 'jpy')    // '¥1,000'
- * format(5000, 'bhd')    // 'BD5.000'
- * format(-1999, 'usd')   // '-US$19.99'
- * format(0, 'usd')       // 'US$0.00'
+ * format(1999, 'usd')                  // 'US$19.99'
+ * format(1999, 'usd', { short: true }) // '$19.99'
+ * format(1500, 'gbp')                  // '£15.00'
+ * format(1000, 'jpy')                  // '¥1,000'
+ * format(-1999, 'usd')                 // '-US$19.99'
  */
-export function format(amount, currency) {
+export function format(amount, currency, options = {}) {
   const config = getConfig(currency);
   if (!config) return String(amount);
 
@@ -61,7 +74,11 @@ export function format(amount, currency) {
     formatted = numberFormat(abs / Math.pow(10, config.decimals), config.decimals);
   }
 
-  return (isNegative ? '-' : '') + config.symbol + formatted;
+  const symbol = options.short
+    ? (SHORT_SYMBOLS[currency.toUpperCase()] || config.symbol)
+    : config.symbol;
+
+  return (isNegative ? '-' : '') + symbol + formatted;
 }
 
 /**
@@ -113,18 +130,18 @@ export function formatWithCode(amount, currency) {
  * @param {number} [intervalCount=1] - Number of intervals per billing cycle.
  * @returns {string} Formatted recurring price.
  *
+ * @param {Object} [options] - Formatting options (same as format).
+ * @param {boolean} [options.short] - Use short symbol ('$' instead of 'US$').
+ *
  * @example
- * formatRecurring(999, 'usd', 'month')        // 'US$9.99/mo'
- * formatRecurring(2999, 'usd', 'year')         // 'US$29.99/yr'
- * formatRecurring(999, 'usd', 'month', 3)      // 'US$9.99 every 3 months'
- * formatRecurring(500, 'gbp', 'week')           // '£5.00/wk'
- * formatRecurring(100, 'usd', 'day')            // 'US$1.00/day'
- * formatRecurring(999, 'eur', 'month')          // '€9.99/mo'
- * formatRecurring(1000, 'jpy', 'month')         // '¥1,000/mo'
- * formatRecurring(999, 'usd', 'year', 2)        // 'US$9.99 every 2 years'
+ * formatRecurring(999, 'usd', 'month')                          // 'US$9.99/mo'
+ * formatRecurring(999, 'usd', 'month', 1, { short: true })     // '$9.99/mo'
+ * formatRecurring(2999, 'usd', 'year')                          // 'US$29.99/yr'
+ * formatRecurring(999, 'usd', 'month', 3)                       // 'US$9.99 every 3 months'
+ * formatRecurring(500, 'gbp', 'week')                            // '£5.00/wk'
  */
-export function formatRecurring(amount, currency, interval, intervalCount = 1) {
-  const base = format(amount, currency);
+export function formatRecurring(amount, currency, interval, intervalCount = 1, options = {}) {
+  const base = format(amount, currency, options);
 
   if (!interval) return base;
 

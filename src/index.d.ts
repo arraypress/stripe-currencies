@@ -2,8 +2,13 @@
  * @arraypress/stripe-currencies — TypeScript definitions.
  */
 
+export interface FormatOptions {
+  /** Use short symbol ('$' instead of 'US$', 'C$', 'A$', etc.). */
+  short?: boolean;
+}
+
 /** Format an amount (in smallest unit) with currency symbol. */
-export function format(amount: number, currency: string): string;
+export function format(amount: number, currency: string, options?: FormatOptions): string;
 
 /** Format an amount without currency symbol. */
 export function formatPlain(amount: number, currency: string): string;
@@ -16,10 +21,11 @@ export function formatRecurring(
   amount: number,
   currency: string,
   interval: 'day' | 'week' | 'month' | 'year',
-  intervalCount?: number
+  intervalCount?: number,
+  options?: FormatOptions
 ): string;
 
-/** Get the currency symbol (e.g. '$', '£', '¥'). */
+/** Get the currency symbol (e.g. 'US$', '£', '¥'). */
 export function getSymbol(currency: string): string;
 
 /** Get the currency display name (e.g. 'US Dollar'). */

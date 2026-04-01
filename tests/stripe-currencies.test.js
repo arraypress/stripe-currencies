@@ -299,3 +299,22 @@ describe('currency data', () => {
     }
   });
 });
+
+// ── Short symbol option ──────────────────
+
+describe('format with short option', () => {
+  it('USD short: $19.99', () => assert.equal(format(1999, 'usd', { short: true }), '$19.99'));
+  it('USD default: US$19.99', () => assert.equal(format(1999, 'usd'), 'US$19.99'));
+  it('CAD short: $15.00', () => assert.equal(format(1500, 'cad', { short: true }), '$15.00'));
+  it('AUD short: $25.00', () => assert.equal(format(2500, 'aud', { short: true }), '$25.00'));
+  it('GBP short unchanged: £15.00', () => assert.equal(format(1500, 'gbp', { short: true }), '£15.00'));
+  it('EUR short unchanged: €9.99', () => assert.equal(format(999, 'eur', { short: true }), '€9.99'));
+  it('JPY short unchanged: ¥1,000', () => assert.equal(format(1000, 'jpy', { short: true }), '¥1,000'));
+  it('negative short: -$19.99', () => assert.equal(format(-1999, 'usd', { short: true }), '-$19.99'));
+});
+
+describe('formatRecurring with short option', () => {
+  it('USD short monthly: $9.99/mo', () => assert.equal(formatRecurring(999, 'usd', 'month', 1, { short: true }), '$9.99/mo'));
+  it('USD short yearly: $29.99/yr', () => assert.equal(formatRecurring(2999, 'usd', 'year', 1, { short: true }), '$29.99/yr'));
+  it('USD short every 3 months: $9.99 every 3 months', () => assert.equal(formatRecurring(999, 'usd', 'month', 3, { short: true }), '$9.99 every 3 months'));
+});
