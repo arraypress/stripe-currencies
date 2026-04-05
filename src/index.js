@@ -7,14 +7,14 @@
  * Functional API — no classes. Zero dependencies.
  * Works in Node.js, Cloudflare Workers, Deno, Bun, and browsers.
  *
- * v2.1.0: Added formatRecurring() for subscription price display.
+ * v3.0.0: Added display option ('short', 'full', 'code', 'narrowSymbol').
  *
  * @module @arraypress/stripe-currencies
  */
 
 import { CURRENCIES } from './currencies.js';
 
-// ── Internal Helper ─────────────────────────
+// ── Internal Helpers ────────────────────────
 
 function numberFormat(num, decimals) {
   const fixed = num.toFixed(decimals);
@@ -28,11 +28,14 @@ function getConfig(currency) {
   return CURRENCIES[currency.toUpperCase()] || null;
 }
 
-// ── Formatting ──────────────────────────────
+function toDecimal(amount, config) {
+  if (config.decimals === 0) return amount;
+  return amount / Math.pow(10, config.decimals);
+}
 
 /**
- * Short symbols for currencies where the full symbol includes a prefix.
- * Only currencies that share the '$' sign need disambiguation by default.
+ * Short symbols for currencies where the full symbol includes a country prefix.
+ * Used by display: 'short' — maps dollar-family currencies to bare '$'.
  */
 const SHORT_SYMBOLS = {
   USD: '$', CAD: '$', AUD: '$', NZD: '$', SGD: '$', HKD: '$',
@@ -43,6 +46,45 @@ const SHORT_SYMBOLS = {
 };
 
 /**
+ * Get the narrow symbol for a currency using Intl.NumberFormat.
+ * Falls back to the short symbol or full symbol if Intl is unavailable.
+ */
+function getNarrowSymbol(currency, config) {
+  const code = currency.toUpperCase();
+  try {
+    const parts = new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'narrowSymbol',
+    }).formatToParts(0);
+    const sym = parts.find(p => p.type === 'currency');
+    return sym ? sym.value : SHORT_SYMBOLS[code] || config.symbol;
+  } catch {
+    return SHORT_SYMBOLS[code] || config.symbol;
+  }
+}
+
+/**
+ * Resolve the display symbol based on the display option.
+ */
+function resolveSymbol(currency, config, options) {
+  const display = options.display || (options.short ? 'short' : undefined);
+
+  switch (display) {
+    case 'narrowSymbol':
+      return getNarrowSymbol(currency, config);
+    case 'short':
+      return SHORT_SYMBOLS[currency.toUpperCase()] || config.symbol;
+    case 'code':
+      return null; // handled by the caller
+    default:
+      return config.symbol;
+  }
+}
+
+// ── Formatting ──────────────────────────────
+
+/**
  * Format an amount with currency symbol.
  *
  * Amount is in the smallest unit (cents, pence, etc.) as Stripe returns.
@@ -50,15 +92,24 @@ const SHORT_SYMBOLS = {
  * @param {number} amount - Amount in smallest unit.
  * @param {string} currency - Currency code (e.g. 'usd', 'gbp', 'jpy').
  * @param {Object} [options] - Formatting options.
- * @param {boolean} [options.short] - Use short symbol ('$' instead of 'US$').
+ * @param {string} [options.display] - Symbol display mode:
+ *   - 'short' — bare symbol, e.g. '$19.99' (maps dollar-family to '$')
+ *   - 'narrowSymbol' — Intl narrow symbol, e.g. '$19.99', 'kr19.99' (broadest coverage)
+ *   - 'code' — ISO code prefix, e.g. 'USD 19.99'
+ *   - 'full' — full symbol (default), e.g. 'US$19.99', 'C$19.99'
+ * @param {boolean} [options.short] - Legacy alias for display: 'short'.
  * @returns {string} Formatted string.
  *
  * @example
- * format(1999, 'usd')                  // 'US$19.99'
- * format(1999, 'usd', { short: true }) // '$19.99'
- * format(1500, 'gbp')                  // '£15.00'
- * format(1000, 'jpy')                  // '¥1,000'
- * format(-1999, 'usd')                 // '-US$19.99'
+ * format(1999, 'usd')                            // 'US$19.99'
+ * format(1999, 'usd', { display: 'short' })      // '$19.99'
+ * format(1999, 'usd', { display: 'narrowSymbol'})// '$19.99'
+ * format(1999, 'usd', { display: 'code' })       // 'USD 19.99'
+ * format(1999, 'usd', { display: 'full' })       // 'US$19.99'
+ * format(1999, 'usd', { short: true })           // '$19.99'
+ * format(1500, 'gbp')                            // '£15.00'
+ * format(1000, 'jpy')                            // '¥1,000'
+ * format(-1999, 'usd')                           // '-US$19.99'
  */
 export function format(amount, currency, options = {}) {
   const config = getConfig(currency);
@@ -66,19 +117,16 @@ export function format(amount, currency, options = {}) {
 
   const isNegative = amount < 0;
   const abs = Math.abs(amount);
+  const formatted = numberFormat(toDecimal(abs, config), config.decimals);
+  const display = options.display || (options.short ? 'short' : undefined);
+  const prefix = isNegative ? '-' : '';
 
-  let formatted;
-  if (config.decimals === 0) {
-    formatted = numberFormat(abs, 0);
-  } else {
-    formatted = numberFormat(abs / Math.pow(10, config.decimals), config.decimals);
+  if (display === 'code') {
+    return prefix + currency.toUpperCase() + ' ' + formatted;
   }
 
-  const symbol = options.short
-    ? (SHORT_SYMBOLS[currency.toUpperCase()] || config.symbol)
-    : config.symbol;
-
-  return (isNegative ? '-' : '') + symbol + formatted;
+  const symbol = resolveSymbol(currency, config, options);
+  return prefix + symbol + formatted;
 }
 
 /**
@@ -95,11 +143,7 @@ export function format(amount, currency, options = {}) {
 export function formatPlain(amount, currency) {
   const config = getConfig(currency);
   if (!config) return String(amount);
-
-  if (config.decimals === 0) {
-    return numberFormat(amount, 0);
-  }
-  return numberFormat(amount / Math.pow(10, config.decimals), config.decimals);
+  return numberFormat(toDecimal(Math.abs(amount), config), config.decimals);
 }
 
 /**
@@ -128,17 +172,18 @@ export function formatWithCode(amount, currency) {
  * @param {string} currency - Currency code.
  * @param {string} interval - Billing interval: 'day', 'week', 'month', 'year'.
  * @param {number} [intervalCount=1] - Number of intervals per billing cycle.
+ * @param {Object} [options] - Formatting options (same as format).
+ * @param {string} [options.display] - Symbol display mode (see format).
+ * @param {boolean} [options.short] - Legacy alias for display: 'short'.
  * @returns {string} Formatted recurring price.
  *
- * @param {Object} [options] - Formatting options (same as format).
- * @param {boolean} [options.short] - Use short symbol ('$' instead of 'US$').
- *
  * @example
- * formatRecurring(999, 'usd', 'month')                          // 'US$9.99/mo'
- * formatRecurring(999, 'usd', 'month', 1, { short: true })     // '$9.99/mo'
- * formatRecurring(2999, 'usd', 'year')                          // 'US$29.99/yr'
- * formatRecurring(999, 'usd', 'month', 3)                       // 'US$9.99 every 3 months'
- * formatRecurring(500, 'gbp', 'week')                            // '£5.00/wk'
+ * formatRecurring(999, 'usd', 'month')                                   // 'US$9.99/mo'
+ * formatRecurring(999, 'usd', 'month', 1, { display: 'short' })         // '$9.99/mo'
+ * formatRecurring(999, 'usd', 'month', 1, { display: 'code' })          // 'USD 9.99/mo'
+ * formatRecurring(2999, 'usd', 'year')                                   // 'US$29.99/yr'
+ * formatRecurring(999, 'usd', 'month', 3)                                // 'US$9.99 every 3 months'
+ * formatRecurring(500, 'gbp', 'week')                                    // '£5.00/wk'
  */
 export function formatRecurring(amount, currency, interval, intervalCount = 1, options = {}) {
   const base = format(amount, currency, options);
@@ -165,14 +210,27 @@ export function formatRecurring(amount, currency, interval, intervalCount = 1, o
  * Get the currency symbol.
  *
  * @param {string} currency - Currency code.
+ * @param {Object} [options] - Options.
+ * @param {string} [options.display] - 'short', 'narrowSymbol', or 'full' (default).
  * @returns {string} Symbol or uppercase code if not found.
  *
  * @example
- * getSymbol('usd')   // 'US$'
- * getSymbol('gbp')   // '£'
+ * getSymbol('usd')                            // 'US$'
+ * getSymbol('usd', { display: 'short' })      // '$'
+ * getSymbol('usd', { display: 'narrowSymbol'})// '$'
+ * getSymbol('usd', { display: 'code' })       // 'USD'
+ * getSymbol('gbp')                            // '£'
  */
-export function getSymbol(currency) {
-  return getConfig(currency)?.symbol || (currency || '').toUpperCase();
+export function getSymbol(currency, options = {}) {
+  const config = getConfig(currency);
+  if (!config) return (currency || '').toUpperCase();
+
+  const display = options.display || (options.short ? 'short' : undefined);
+
+  if (display === 'code') return currency.toUpperCase();
+  if (display === 'narrowSymbol') return getNarrowSymbol(currency, config);
+  if (display === 'short') return SHORT_SYMBOLS[currency.toUpperCase()] || config.symbol;
+  return config.symbol;
 }
 
 /**

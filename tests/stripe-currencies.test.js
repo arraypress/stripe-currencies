@@ -55,6 +55,56 @@ describe('format', () => {
   });
 });
 
+// ── format display option ──────────────────
+
+describe('format with display option', () => {
+  describe('display: short', () => {
+    it('USD → $19.99', () => assert.equal(format(1999, 'usd', { display: 'short' }), '$19.99'));
+    it('CAD → $15.00', () => assert.equal(format(1500, 'cad', { display: 'short' }), '$15.00'));
+    it('AUD → $25.00', () => assert.equal(format(2500, 'aud', { display: 'short' }), '$25.00'));
+    it('GBP unchanged → £15.00', () => assert.equal(format(1500, 'gbp', { display: 'short' }), '£15.00'));
+    it('EUR unchanged → €9.99', () => assert.equal(format(999, 'eur', { display: 'short' }), '€9.99'));
+    it('JPY unchanged → ¥1,000', () => assert.equal(format(1000, 'jpy', { display: 'short' }), '¥1,000'));
+    it('negative → -$19.99', () => assert.equal(format(-1999, 'usd', { display: 'short' }), '-$19.99'));
+  });
+
+  describe('display: narrowSymbol', () => {
+    it('USD → $19.99', () => assert.equal(format(1999, 'usd', { display: 'narrowSymbol' }), '$19.99'));
+    it('CAD → $15.00', () => assert.equal(format(1500, 'cad', { display: 'narrowSymbol' }), '$15.00'));
+    it('GBP → £15.00', () => assert.equal(format(1500, 'gbp', { display: 'narrowSymbol' }), '£15.00'));
+    it('EUR → €9.99', () => assert.equal(format(999, 'eur', { display: 'narrowSymbol' }), '€9.99'));
+    it('JPY → ¥1,000', () => assert.equal(format(1000, 'jpy', { display: 'narrowSymbol' }), '¥1,000'));
+    it('negative → -$19.99', () => assert.equal(format(-1999, 'usd', { display: 'narrowSymbol' }), '-$19.99'));
+  });
+
+  describe('display: code', () => {
+    it('USD → USD 19.99', () => assert.equal(format(1999, 'usd', { display: 'code' }), 'USD 19.99'));
+    it('GBP → GBP 15.00', () => assert.equal(format(1500, 'gbp', { display: 'code' }), 'GBP 15.00'));
+    it('JPY → JPY 1,000', () => assert.equal(format(1000, 'jpy', { display: 'code' }), 'JPY 1,000'));
+    it('BHD → BHD 5.000', () => assert.equal(format(5000, 'bhd', { display: 'code' }), 'BHD 5.000'));
+    it('negative → -USD 19.99', () => assert.equal(format(-1999, 'usd', { display: 'code' }), '-USD 19.99'));
+  });
+
+  describe('display: full (explicit default)', () => {
+    it('USD → US$19.99', () => assert.equal(format(1999, 'usd', { display: 'full' }), 'US$19.99'));
+    it('CAD → C$15.00', () => assert.equal(format(1500, 'cad', { display: 'full' }), 'C$15.00'));
+    it('GBP → £15.00', () => assert.equal(format(1500, 'gbp', { display: 'full' }), '£15.00'));
+  });
+});
+
+// ── Legacy short option (backwards compat) ──
+
+describe('format with legacy short: true', () => {
+  it('USD short: $19.99', () => assert.equal(format(1999, 'usd', { short: true }), '$19.99'));
+  it('USD default: US$19.99', () => assert.equal(format(1999, 'usd'), 'US$19.99'));
+  it('CAD short: $15.00', () => assert.equal(format(1500, 'cad', { short: true }), '$15.00'));
+  it('AUD short: $25.00', () => assert.equal(format(2500, 'aud', { short: true }), '$25.00'));
+  it('GBP short unchanged: £15.00', () => assert.equal(format(1500, 'gbp', { short: true }), '£15.00'));
+  it('EUR short unchanged: €9.99', () => assert.equal(format(999, 'eur', { short: true }), '€9.99'));
+  it('JPY short unchanged: ¥1,000', () => assert.equal(format(1000, 'jpy', { short: true }), '¥1,000'));
+  it('negative short: -$19.99', () => assert.equal(format(-1999, 'usd', { short: true }), '-$19.99'));
+});
+
 // ── formatPlain ─────────────────────────────
 
 describe('formatPlain', () => {
@@ -147,6 +197,30 @@ describe('formatRecurring', () => {
   });
 });
 
+describe('formatRecurring with display option', () => {
+  it('display: short', () => {
+    assert.equal(formatRecurring(999, 'usd', 'month', 1, { display: 'short' }), '$9.99/mo');
+    assert.equal(formatRecurring(2999, 'usd', 'year', 1, { display: 'short' }), '$29.99/yr');
+    assert.equal(formatRecurring(999, 'usd', 'month', 3, { display: 'short' }), '$9.99 every 3 months');
+  });
+
+  it('display: code', () => {
+    assert.equal(formatRecurring(999, 'usd', 'month', 1, { display: 'code' }), 'USD 9.99/mo');
+    assert.equal(formatRecurring(2999, 'usd', 'year', 1, { display: 'code' }), 'USD 29.99/yr');
+    assert.equal(formatRecurring(999, 'usd', 'month', 3, { display: 'code' }), 'USD 9.99 every 3 months');
+  });
+
+  it('display: narrowSymbol', () => {
+    assert.equal(formatRecurring(999, 'usd', 'month', 1, { display: 'narrowSymbol' }), '$9.99/mo');
+  });
+
+  it('legacy short: true', () => {
+    assert.equal(formatRecurring(999, 'usd', 'month', 1, { short: true }), '$9.99/mo');
+    assert.equal(formatRecurring(2999, 'usd', 'year', 1, { short: true }), '$29.99/yr');
+    assert.equal(formatRecurring(999, 'usd', 'month', 3, { short: true }), '$9.99 every 3 months');
+  });
+});
+
 // ── getSymbol ───────────────────────────────
 
 describe('getSymbol', () => {
@@ -164,6 +238,34 @@ describe('getSymbol', () => {
 
   it('case insensitive', () => {
     assert.equal(getSymbol('USD'), getSymbol('usd'));
+  });
+});
+
+describe('getSymbol with display option', () => {
+  it('display: short', () => {
+    assert.equal(getSymbol('usd', { display: 'short' }), '$');
+    assert.equal(getSymbol('cad', { display: 'short' }), '$');
+    assert.equal(getSymbol('gbp', { display: 'short' }), '£');
+  });
+
+  it('display: narrowSymbol', () => {
+    assert.equal(getSymbol('usd', { display: 'narrowSymbol' }), '$');
+    assert.equal(getSymbol('cad', { display: 'narrowSymbol' }), '$');
+    assert.equal(getSymbol('gbp', { display: 'narrowSymbol' }), '£');
+  });
+
+  it('display: code', () => {
+    assert.equal(getSymbol('usd', { display: 'code' }), 'USD');
+    assert.equal(getSymbol('gbp', { display: 'code' }), 'GBP');
+  });
+
+  it('display: full', () => {
+    assert.equal(getSymbol('usd', { display: 'full' }), 'US$');
+    assert.equal(getSymbol('cad', { display: 'full' }), 'C$');
+  });
+
+  it('legacy short: true', () => {
+    assert.equal(getSymbol('usd', { short: true }), '$');
   });
 });
 
@@ -298,23 +400,4 @@ describe('currency data', () => {
       assert.ok([0, 2, 3].includes(config.decimals), `${code} invalid decimals: ${config.decimals}`);
     }
   });
-});
-
-// ── Short symbol option ──────────────────
-
-describe('format with short option', () => {
-  it('USD short: $19.99', () => assert.equal(format(1999, 'usd', { short: true }), '$19.99'));
-  it('USD default: US$19.99', () => assert.equal(format(1999, 'usd'), 'US$19.99'));
-  it('CAD short: $15.00', () => assert.equal(format(1500, 'cad', { short: true }), '$15.00'));
-  it('AUD short: $25.00', () => assert.equal(format(2500, 'aud', { short: true }), '$25.00'));
-  it('GBP short unchanged: £15.00', () => assert.equal(format(1500, 'gbp', { short: true }), '£15.00'));
-  it('EUR short unchanged: €9.99', () => assert.equal(format(999, 'eur', { short: true }), '€9.99'));
-  it('JPY short unchanged: ¥1,000', () => assert.equal(format(1000, 'jpy', { short: true }), '¥1,000'));
-  it('negative short: -$19.99', () => assert.equal(format(-1999, 'usd', { short: true }), '-$19.99'));
-});
-
-describe('formatRecurring with short option', () => {
-  it('USD short monthly: $9.99/mo', () => assert.equal(formatRecurring(999, 'usd', 'month', 1, { short: true }), '$9.99/mo'));
-  it('USD short yearly: $29.99/yr', () => assert.equal(formatRecurring(2999, 'usd', 'year', 1, { short: true }), '$29.99/yr'));
-  it('USD short every 3 months: $9.99 every 3 months', () => assert.equal(formatRecurring(999, 'usd', 'month', 3, { short: true }), '$9.99 every 3 months'));
 });

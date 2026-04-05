@@ -3,7 +3,30 @@
  */
 
 export interface FormatOptions {
-  /** Use short symbol ('$' instead of 'US$', 'C$', 'A$', etc.). */
+  /**
+   * Symbol display mode:
+   * - 'short' — bare symbol ('$' instead of 'US$', maps dollar-family to '$')
+   * - 'narrowSymbol' — Intl narrow symbol (broadest coverage: '$', 'kr', '₩', etc.)
+   * - 'code' — ISO code prefix ('USD 19.99')
+   * - 'full' — full symbol (default: 'US$19.99', 'C$19.99')
+   */
+  display?: 'short' | 'narrowSymbol' | 'code' | 'full';
+
+  /** @deprecated Use display: 'short' instead. Legacy alias for display: 'short'. */
+  short?: boolean;
+}
+
+export interface SymbolOptions {
+  /**
+   * Symbol display mode:
+   * - 'short' — bare symbol ('$' instead of 'US$')
+   * - 'narrowSymbol' — Intl narrow symbol
+   * - 'code' — ISO currency code ('USD')
+   * - 'full' — full symbol (default: 'US$')
+   */
+  display?: 'short' | 'narrowSymbol' | 'code' | 'full';
+
+  /** @deprecated Use display: 'short' instead. */
   short?: boolean;
 }
 
@@ -25,8 +48,8 @@ export function formatRecurring(
   options?: FormatOptions
 ): string;
 
-/** Get the currency symbol (e.g. 'US$', '£', '¥'). */
-export function getSymbol(currency: string): string;
+/** Get the currency symbol (e.g. 'US$', '£', '¥'). Accepts display option. */
+export function getSymbol(currency: string, options?: SymbolOptions): string;
 
 /** Get the currency display name (e.g. 'US Dollar'). */
 export function getName(currency: string): string;
