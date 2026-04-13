@@ -326,3 +326,43 @@ export function isSupported(currency) {
 export function isZeroDecimal(currency) {
   return getConfig(currency)?.decimals === 0;
 }
+
+/**
+ * Get all supported currency codes.
+ *
+ * @returns {string[]} Array of lowercase currency codes.
+ *
+ * @example
+ * getCodes()   // ['usd', 'eur', 'gbp', 'jpy', ...]
+ * getCodes().length   // 136
+ */
+export function getCodes() {
+  return Object.keys(CURRENCIES).map(c => c.toLowerCase());
+}
+
+/**
+ * Get all currencies with full details.
+ *
+ * @returns {{ code: string, name: string, symbol: string, decimals: number, country: string }[]}
+ *
+ * @example
+ * getAll()   // [{ code: 'usd', name: 'US Dollar', symbol: 'US$', ... }, ...]
+ */
+export function getAll() {
+  return Object.entries(CURRENCIES).map(([code, config]) => ({
+    code: code.toLowerCase(),
+    name: config.name,
+    symbol: config.symbol,
+    decimals: config.decimals,
+    country: config.country || '',
+    countryName: config.countryName || '',
+  }));
+}
+
+/** Popular currencies — the most commonly used in e-commerce. */
+export const POPULAR_CODES = [
+  'usd', 'eur', 'gbp', 'cad', 'aud', 'jpy', 'cny', 'inr', 'brl', 'mxn',
+  'krw', 'sgd', 'chf', 'sek', 'nok', 'dkk', 'nzd', 'hkd', 'pln', 'czk',
+  'thb', 'php', 'myr', 'idr', 'zar', 'aed', 'sar', 'try', 'ils', 'ngn',
+  'clp', 'cop', 'pen', 'ars',
+];

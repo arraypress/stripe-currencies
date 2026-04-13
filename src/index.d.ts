@@ -68,3 +68,19 @@ export function isSupported(currency: string): boolean;
 
 /** Check if a currency is zero-decimal (JPY, KRW, etc.). */
 export function isZeroDecimal(currency: string): boolean;
+
+/** Get all supported currency codes as lowercase strings. */
+export function getCodes(): string[];
+
+/** Get all currencies with full details. */
+export function getAll(): {
+  code: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  country: string;
+  countryName: string;
+}[];
+
+/** Popular currency codes — most commonly used in e-commerce. */
+export const POPULAR_CODES: string[];
