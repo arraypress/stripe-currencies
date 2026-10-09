@@ -48,6 +48,9 @@ export function formatRecurring(
   options?: FormatOptions
 ): string;
 
+/** A billing interval on its own, as formatRecurring() appends it ('/mo', ' every 3 months'); '' for none. */
+export function formatInterval(interval?: 'day' | 'week' | 'month' | 'year' | null, intervalCount?: number): string;
+
 /** Get the currency symbol (e.g. 'US$', '£', '¥'). Accepts display option. */
 export function getSymbol(currency: string, options?: SymbolOptions): string;
 

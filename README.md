@@ -72,6 +72,11 @@ formatRecurring(500, 'usd', 'week', 2)     // 'US$5.00 every 2 weeks'
 // Zero-decimal currencies
 formatRecurring(1000, 'jpy', 'month')      // '¥1,000/mo'
 
+// The interval alone, for markup that keeps the amount in its own element
+// (one a currency switcher rewrites): <span>£9.00</span><span>/mo</span>
+formatInterval('month')                     // '/mo'
+formatInterval('month', 3)                  // ' every 3 months'
+
 // No interval returns plain format
 formatRecurring(999, 'usd', null)          // 'US$9.99'
 ```

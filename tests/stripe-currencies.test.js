@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  format, formatPlain, formatWithCode, formatRecurring,
+  format, formatPlain, formatWithCode, formatInterval, formatRecurring,
   getSymbol, getName, getDecimals,
   toSmallestUnit, fromSmallestUnit,
   isSupported, isZeroDecimal,
@@ -130,6 +130,16 @@ describe('formatWithCode', () => {
 });
 
 // ── formatRecurring ─────────────────────────
+
+describe('formatInterval', () => {
+  it('is what formatRecurring appends, on its own', () => {
+    assert.equal(formatInterval('month'), '/mo');
+    assert.equal(formatInterval('year'), '/yr');
+    assert.equal(formatInterval('week', 2), ' every 2 weeks');
+    assert.equal(formatInterval(undefined), '');
+    assert.equal(formatRecurring(999, 'gbp', 'month', 3), format(999, 'gbp') + formatInterval('month', 3));
+  });
+});
 
 describe('formatRecurring', () => {
   it('monthly', () => {

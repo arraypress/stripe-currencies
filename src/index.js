@@ -186,22 +186,36 @@ export function formatWithCode(amount, currency) {
  * formatRecurring(500, 'gbp', 'week')                                    // '£5.00/wk'
  */
 export function formatRecurring(amount, currency, interval, intervalCount = 1, options = {}) {
-  const base = format(amount, currency, options);
+  return format(amount, currency, options) + formatInterval(interval, intervalCount);
+}
 
-  if (!interval) return base;
+/**
+ * A billing interval on its own, as formatRecurring() appends it: for
+ * markup that keeps the amount in its own element (one a currency
+ * switcher rewrites) and the interval beside it.
+ *
+ * @param {string} [interval] - Billing interval: 'day', 'week', 'month', 'year'.
+ * @param {number} [intervalCount=1] - Number of intervals per billing cycle.
+ * @returns {string} The suffix, or '' for no interval.
+ *
+ * @example
+ * formatInterval('month')     // '/mo'
+ * formatInterval('year')      // '/yr'
+ * formatInterval('month', 3)  // ' every 3 months'
+ * formatInterval(undefined)   // ''
+ */
+export function formatInterval(interval, intervalCount = 1) {
+  if (!interval) return '';
 
   // Custom interval counts: "every 3 months"
   if (intervalCount > 1) {
     const plurals = { day: 'days', week: 'weeks', month: 'months', year: 'years' };
-    const plural = plurals[interval] || `${interval}s`;
-    return `${base} every ${intervalCount} ${plural}`;
+    return ` every ${intervalCount} ${plurals[interval] || `${interval}s`}`;
   }
 
   // Standard suffixes: /day, /wk, /mo, /yr
   const suffixes = { day: '/day', week: '/wk', month: '/mo', year: '/yr' };
-  const suffix = suffixes[interval] || `/${interval}`;
-
-  return base + suffix;
+  return suffixes[interval] || `/${interval}`;
 }
 
 // ── Currency Data ───────────────────────────
