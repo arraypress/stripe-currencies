@@ -105,6 +105,32 @@ describe('format with legacy short: true', () => {
   it('negative short: -$19.99', () => assert.equal(format(-1999, 'usd', { short: true }), '-$19.99'));
 });
 
+// ── format locale option ───────────────────
+
+describe('format with locale option', () => {
+  it('EUR in German → 19,99 €', () => assert.equal(format(1999, 'eur', { locale: 'de' }), '19,99\u00a0€'));
+  it('GBP in English → £19.99', () => assert.equal(format(1999, 'gbp', { locale: 'en' }), '£19.99'));
+  it('JPY in Japanese → ￥1,500 (zero-decimal stays whole)', () => assert.equal(format(1500, 'jpy', { locale: 'ja' }), '￥1,500'));
+  it('BHD keeps three decimals', () => assert.equal(format(5000, 'bhd', { locale: 'en' }), 'BHD\u00a05.000'));
+  it('ISK keeps Stripe\'s two decimals, not ISO\'s zero', () => assert.equal(format(1999, 'isk', { locale: 'en' }), 'ISK\u00a019.99'));
+  it('negative → -19,99 €', () => assert.equal(format(-1999, 'eur', { locale: 'de' }), '-19,99\u00a0€'));
+  it('Brazilian Portuguese', () => assert.equal(format(123456, 'brl', { locale: 'pt-BR' }), 'R$\u00a01.234,56'));
+
+  it('display: code → ISO code', () => assert.equal(format(1999, 'usd', { locale: 'de', display: 'code' }), '19,99\u00a0USD'));
+  it('display: short → narrow symbol', () => assert.equal(format(1999, 'cad', { locale: 'en', display: 'short' }), '$19.99'));
+  it('display: narrowSymbol → narrow symbol', () => assert.equal(format(1999, 'cad', { locale: 'en', display: 'narrowSymbol' }), '$19.99'));
+  it('legacy short: true → narrow symbol', () => assert.equal(format(1999, 'cad', { locale: 'en', short: true }), '$19.99'));
+  it('display: full → the locale\'s symbol', () => assert.equal(format(1999, 'cad', { locale: 'en', display: 'full' }), 'CA$19.99'));
+
+  it('unknown locale falls back to the default formatting', () => {
+    assert.equal(format(1999, 'usd', { locale: 'xx' }), 'US$19.99');
+    assert.equal(format(1999, 'usd', { locale: 'not a locale' }), 'US$19.99');
+    assert.equal(format(1999, 'usd', { locale: 'xx', display: 'code' }), 'USD 19.99');
+  });
+
+  it('unknown currency still returns raw amount', () => assert.equal(format(1999, 'xyz', { locale: 'de' }), '1999'));
+});
+
 // ── formatPlain ─────────────────────────────
 
 describe('formatPlain', () => {
@@ -222,6 +248,11 @@ describe('formatRecurring with display option', () => {
 
   it('display: narrowSymbol', () => {
     assert.equal(formatRecurring(999, 'usd', 'month', 1, { display: 'narrowSymbol' }), '$9.99/mo');
+  });
+
+  it('locale formats the amount, the suffix stays English', () => {
+    assert.equal(formatRecurring(999, 'eur', 'month', 1, { locale: 'de' }), '9,99\u00a0€/mo');
+    assert.equal(formatRecurring(999, 'eur', 'month', 3, { locale: 'de' }), '9,99\u00a0€ every 3 months');
   });
 
   it('legacy short: true', () => {

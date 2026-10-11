@@ -51,6 +51,21 @@ All formatting functions take `amount` in the **smallest unit** (cents, pence, e
 | `formatPlain(1999, 'usd')`    | No symbol     | `'19.99'`     |
 | `formatWithCode(1999, 'usd')` | Code suffix   | `'19.99 USD'` |
 
+### In another language
+
+Pass `locale` (a BCP 47 tag) to format with `Intl.NumberFormat` in that language, still at Stripe's
+decimals for the currency. `display` still applies: `'code'` shows the ISO code, `'short'` and
+`'narrowSymbol'` the narrow symbol. An unknown locale falls back to the default formatting.
+
+```js
+format(1999, 'eur', { locale: 'de' })                     // '19,99 €'
+format(1999, 'gbp', { locale: 'en' })                     // '£19.99'
+format(1500, 'jpy', { locale: 'ja' })                     // '￥1,500'
+format(123456, 'brl', { locale: 'pt-BR' })                // 'R$ 1.234,56'
+format(1999, 'usd', { locale: 'de', display: 'code' })    // '19,99 USD'
+formatRecurring(999, 'eur', 'month', 1, { locale: 'de' }) // '9,99 €/mo' (the suffix stays English)
+```
+
 ### Recurring Prices
 
 Format subscription/recurring prices with billing interval suffixes.

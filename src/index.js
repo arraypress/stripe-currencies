@@ -82,6 +82,33 @@ function resolveSymbol(currency, config, options) {
   }
 }
 
+/**
+ * Intl's currencyDisplay for each display option, with locale.
+ * 'short' has no Intl equivalent; the narrow symbol is closest.
+ */
+const LOCALE_DISPLAY = { code: 'code', narrowSymbol: 'narrowSymbol', short: 'narrowSymbol' };
+
+/**
+ * Format in a language with Intl.NumberFormat, at the decimals Stripe uses
+ * for the currency (not ISO's, which differ for ISK, HUF, UGX and others).
+ * Returns null when the runtime doesn't know the locale or the currency,
+ * so the caller falls back to the built-in formatting.
+ */
+function formatInLocale(amount, currency, config, display, locale) {
+  try {
+    if (!Intl.NumberFormat.supportedLocalesOf(locale).length) return null;
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+      currencyDisplay: LOCALE_DISPLAY[display] || 'symbol',
+      minimumFractionDigits: config.decimals,
+      maximumFractionDigits: config.decimals,
+    }).format(toDecimal(amount, config));
+  } catch {
+    return null;
+  }
+}
+
 // ── Formatting ──────────────────────────────
 
 /**
@@ -98,6 +125,10 @@ function resolveSymbol(currency, config, options) {
  *   - 'code' — ISO code prefix, e.g. 'USD 19.99'
  *   - 'full' — full symbol (default), e.g. 'US$19.99', 'C$19.99'
  * @param {boolean} [options.short] - Legacy alias for display: 'short'.
+ * @param {string} [options.locale] - BCP 47 language tag (e.g. 'de', 'pt-BR'):
+ *   format with Intl in that language. 'code' shows the ISO code, 'short' and
+ *   'narrowSymbol' the narrow symbol, 'full' the locale's symbol. An unknown
+ *   locale falls back to the formatting above.
  * @returns {string} Formatted string.
  *
  * @example
@@ -110,15 +141,23 @@ function resolveSymbol(currency, config, options) {
  * format(1500, 'gbp')                            // '£15.00'
  * format(1000, 'jpy')                            // '¥1,000'
  * format(-1999, 'usd')                           // '-US$19.99'
+ * format(1999, 'eur', { locale: 'de' })          // '19,99 €'
+ * format(1500, 'jpy', { locale: 'ja' })          // '￥1,500'
  */
 export function format(amount, currency, options = {}) {
   const config = getConfig(currency);
   if (!config) return String(amount);
 
+  const display = options.display || (options.short ? 'short' : undefined);
+
+  if (options.locale) {
+    const localised = formatInLocale(amount, currency, config, display, options.locale);
+    if (localised !== null) return localised;
+  }
+
   const isNegative = amount < 0;
   const abs = Math.abs(amount);
   const formatted = numberFormat(toDecimal(abs, config), config.decimals);
-  const display = options.display || (options.short ? 'short' : undefined);
   const prefix = isNegative ? '-' : '';
 
   if (display === 'code') {
@@ -175,6 +214,8 @@ export function formatWithCode(amount, currency) {
  * @param {Object} [options] - Formatting options (same as format).
  * @param {string} [options.display] - Symbol display mode (see format).
  * @param {boolean} [options.short] - Legacy alias for display: 'short'.
+ * @param {string} [options.locale] - Language for the amount (see format); the
+ *   interval suffix stays English.
  * @returns {string} Formatted recurring price.
  *
  * @example
@@ -184,6 +225,7 @@ export function formatWithCode(amount, currency) {
  * formatRecurring(2999, 'usd', 'year')                                   // 'US$29.99/yr'
  * formatRecurring(999, 'usd', 'month', 3)                                // 'US$9.99 every 3 months'
  * formatRecurring(500, 'gbp', 'week')                                    // '£5.00/wk'
+ * formatRecurring(999, 'eur', 'month', 1, { locale: 'de' })             // '9,99 €/mo'
  */
 export function formatRecurring(amount, currency, interval, intervalCount = 1, options = {}) {
   return format(amount, currency, options) + formatInterval(interval, intervalCount);

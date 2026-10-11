@@ -14,6 +14,15 @@ export interface FormatOptions {
 
   /** @deprecated Use display: 'short' instead. Legacy alias for display: 'short'. */
   short?: boolean;
+
+  /**
+   * BCP 47 language tag ('de', 'pt-BR'): format with Intl.NumberFormat in that
+   * language, at Stripe's decimals for the currency ('19,99 €', '￥1,500').
+   * display maps to currencyDisplay: 'code' → 'code', 'short' and
+   * 'narrowSymbol' → 'narrowSymbol', 'full' → 'symbol'. An unknown locale or
+   * currency falls back to the default formatting.
+   */
+  locale?: string;
 }
 
 export interface SymbolOptions {
